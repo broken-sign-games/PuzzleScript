@@ -27,7 +27,7 @@ function generateSpriteMatrix(dat) {
     var result = [];
     for (var i = 0; i < dat.length; i++) {
         var row = [];
-        for (var j = 0; j < dat.length; j++) {
+        for (var j = 0; j < dat[i].length; j++) {
             var ch = dat[i].charAt(j);
             if (ch == '.') {
                 row.push(-1);
@@ -148,9 +148,13 @@ function generateExtraMembers(state) {
                     [0, 0, 0, 0, 0]
                 ];
             } else {
-                if (o.spritematrix.length !== 5 || o.spritematrix[0].length !== 5 || o.spritematrix[1].length !== 5 || o.spritematrix[2].length !== 5 || o.spritematrix[3].length !== 5 || o.spritematrix[4].length !== 5) {
-                    logWarning("Sprite graphics must be 5 wide and 5 high exactly.", o.lineNumber);
-                }
+                if (o.spritematrix.length < 5)
+                    logWarning("Sprite graphics must be 5 wide and at least 5 high.", o.lineNumber);
+                
+                for (var i = 0; i < o.spritematrix.length; ++i)
+                    if (o.spritematrix[i].length !== 5)
+                        logWarning("Sprite graphics must be 5 wide and at least 5 high.", o.lineNumber);
+            
                 o.spritematrix = generateSpriteMatrix(o.spritematrix);
             }
         }

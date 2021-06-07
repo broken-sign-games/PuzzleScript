@@ -1,17 +1,29 @@
-function createSprite(name,spritegrid, colors, padding) {
+function createSprite(name,spritegrid, colors, padding, forceIntoCell) {
 	if (colors === undefined) {
 		colors = [state.bgcolor, state.fgcolor];
 	}
 
-	var sprite = makeSpriteCanvas(name);
+
+    var h = spritegrid.length;
+    var w = spritegrid[0].length;
+    var cw = ~~(cellwidth / (w + (padding | 0)));
+    var ch, spriteHeight;
+
+    if (forceIntoCell)
+    {
+        ch = ~~(cellheight / (h + (padding | 0)));
+        spriteHeight = cellheight;
+    }
+    else
+    {
+        ch = ~~(cellheight / (w + (padding | 0)));
+        spriteHeight = h * ch;
+    }
+
+	var sprite = makeSpriteCanvas(name, spriteHeight);
 	var spritectx = sprite.getContext('2d');
+    spritectx.clearRect(0, 0, cellwidth, spriteHeight);
 
-    spritectx.clearRect(0, 0, cellwidth, cellheight);
-
-	var w = spritegrid[0].length;
-	var h = spritegrid.length;
-	var cw = ~~(cellwidth / (w + (padding|0)));
-    var ch = ~~(cellheight / (h + (padding|0)));
     var pixh=ch;
     if ("scanline" in state.metadata) {
         pixh=Math.ceil(ch/2);
@@ -37,7 +49,7 @@ function regenText(spritecanvas,spritectx) {
 
 	for (var n in font) {
 		if (font.hasOwnProperty(n)) {
-			textImages[n] = createSprite('char'+n,font[n], undefined, 1);
+			textImages[n] = createSprite('char'+n,font[n], undefined, 1, true);
 		}
 	}
 }
@@ -50,7 +62,7 @@ function regenSpriteImages() {
 		regenText();
 		return;
 	} else if (levelEditorOpened) {
-        textImages['editor_s'] = createSprite('chars',editor_s_grille,undefined);
+        textImages['editor_s'] = createSprite('chars',editor_s_grille,undefined, true);
     }
     
     if (state.levels.length===0) {
@@ -62,7 +74,7 @@ function regenSpriteImages() {
         if (sprites[i] == undefined) {
             continue;
         }
-        spriteimages[i] = createSprite(i.toString(),sprites[i].dat, sprites[i].colors);
+        spriteimages[i] = createSprite(i.toString(),sprites[i].dat, sprites[i].colors, false);
     }
 
     if (canOpenEditor) {
@@ -80,7 +92,8 @@ var glyphSelectedIndex=0;
 var editorRowCount=1;
 
 var canvasdict={};
-function makeSpriteCanvas(name) {
+function makeSpriteCanvas(name, height) {
+    height ||= cellheight;
     var canvas;
     if (name in canvasdict) {
         canvas = canvasdict[name];
@@ -89,7 +102,7 @@ function makeSpriteCanvas(name) {
         canvasdict[name]=canvas;
     }
 	canvas.width = cellwidth;
-	canvas.height = cellheight;
+	canvas.height = height;
 	return canvas;
 }
 
@@ -275,7 +288,7 @@ function redraw() {
                 for (var k = 0; k < state.objectCount; k++) {
                     if (posMask.get(k) != 0) {                  
                         var sprite = spriteimages[k];
-                        ctx.drawImage(sprite, xoffset + (i-mini) * cellwidth, yoffset + (j-minj) * cellheight);
+                        ctx.drawImage(sprite, xoffset + (i-mini) * cellwidth, yoffset + (j-minj) * cellheight - (sprite.height - cellheight));
                     }
                 }
             }

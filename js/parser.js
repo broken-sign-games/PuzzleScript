@@ -321,6 +321,8 @@ var codeMirrorFn = function() {
                         state.levels.push([]);
                     }
             }
+            if (state.section === 'objects' && state.objects_section === 3)
+                state.objects_section = 0;
         },
         token: function(stream, state) {
            	var mixedCase = stream.string;
@@ -510,7 +512,7 @@ var codeMirrorFn = function() {
                             if (match_name == null) {
                                 stream.match(reg_notcommentstart, true);
                                 if (stream.pos>0){                                
-                                    logWarning('Unknown junk in object section (possibly: sprites have to be 5 pixels wide and 5 pixels high exactly. Or maybe: the main names for objects have to be words containing only the letters a-z0.9 - if you want to call them something like ",", do it in the legend section).',state.lineNumber);
+                                    logWarning('Unknown junk in object section (possibly: sprites have to be 5 pixels wide and at least 5 pixels high exactly. Or maybe: the main names for objects have to be words containing only the letters a-z0.9 - if you want to call them something like ",", do it in the legend section).',state.lineNumber);
                                 }
                                 return 'ERROR';
                             } else {
@@ -615,14 +617,11 @@ var codeMirrorFn = function() {
 
                                 spritematrix[spritematrix.length - 1] += ch;
                                 if (spritematrix[spritematrix.length-1].length>5){
-                                    logError('Sprites must be 5 wide and 5 high.', state.lineNumber);
+                                    logError('Sprites must be 5 wide and at least 5 high.', state.lineNumber);
                                     stream.match(reg_notcommentstart, true);
                                     return null;
                                 }
                                 o.spritematrix = state.objects_spritematrix;
-                                if (spritematrix.length === 5 && spritematrix[spritematrix.length - 1].length == 5) {
-                                    state.objects_section = 0;
-                                }
 
                                 if (ch!=='.') {
                                     var n = parseInt(ch);
