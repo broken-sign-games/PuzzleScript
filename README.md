@@ -1,13 +1,8 @@
-PuzzleScript
-============
-
-Open Source HTML5 Puzzle Game Engine
-
-Try it out at https://www.puzzlescript.net
-
------
-
-Dev instructions here - https://groups.google.com/forum/#!searchin/puzzlescript/development/puzzlescript/yptIpY9hlng/cjfrOPy_4jcJ
+A fork of [PuzzleScript by increpare](https://github.com/increpare/PuzzleScript).
+Currently, the only change is that this fork allows sprites to be taller than 5
+pixels, and will align them at the bottom edge of the cell. This allows you to
+create a simple pseudo-3D effect by, e.g. using the bottom three pixels for an
+object's front face and then the top five pixels for its top face.
 
 -----
 
