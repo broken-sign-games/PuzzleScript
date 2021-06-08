@@ -148,12 +148,9 @@ function generateExtraMembers(state) {
                     [0, 0, 0, 0, 0]
                 ];
             } else {
-                if (o.spritematrix.length < 5)
-                    logWarning("Sprite graphics must be 5 wide and at least 5 high.", o.lineNumber);
-                
                 for (var i = 0; i < o.spritematrix.length; ++i)
                     if (o.spritematrix[i].length !== 5)
-                        logWarning("Sprite graphics must be 5 wide and at least 5 high.", o.lineNumber);
+                        logWarning("Sprite graphics must be 5 wide.", o.lineNumber);
             
                 o.spritematrix = generateSpriteMatrix(o.spritematrix);
             }
