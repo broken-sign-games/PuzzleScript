@@ -4,6 +4,8 @@ pixels, and will align them at the bottom edge of the cell. This allows you to
 create a simple pseudo-3D effect by, e.g. using the bottom three pixels for an
 object's front face and then the top five pixels for its top face.
 
+You can [**access the editor here**](https://broken-sign-games.github.io/PuzzleScript/editor.html).
+
 -----
 
 The MIT License (MIT)
