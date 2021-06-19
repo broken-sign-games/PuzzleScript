@@ -1,0 +1,141 @@
+title Pseudo-3D Example
+author Menderbug
+homepage https://broken-sign-games.github.io/PuzzleScript/
+(based on Simple Block Pushing Game by David Skinner)
+
+run_rules_on_level_start
+
+========
+OBJECTS
+========
+
+Background
+LIGHTGREEN GREEN
+11111
+01111
+11101
+11111
+10111
+
+
+Target
+DarkBlue
+.....
+.000.
+.0.0.
+.000.
+.....
+
+Wall
+#9d9d9d #333 black
+12111
+12111
+22222
+11121
+22222
+01000
+11111
+00010
+
+WallBottom
+#9d9d9d #333 black
+12111
+12111
+22222
+11121
+22222
+12111
+12111
+22222
+
+Player
+Black Orange White Blue
+.000.
+.000.
+.111.
+22222
+.222.
+.333.
+.3.3.
+
+Crate
+#493c2b #5b4835 #a46422 #b57920
+00000
+03200
+02020
+00230
+00000
+13231
+12321
+11111
+
+Temp
+pink
+
+
+=======
+LEGEND
+=======
+
+. = Background
+# = Wall
+P = Player
+* = Crate
+@ = Crate and Target
+O = Target
+
+=======
+SOUNDS
+=======
+
+Crate MOVE 36772507
+
+================
+COLLISIONLAYERS
+================
+
+Background
+Target
+Player, Wall, WallBottom, Crate
+
+Temp
+
+======
+RULES
+======
+
+( Replace bottom row of walls to avoid front faces )
+[ ] -> [ Temp ]
+down [ Temp | Temp ] -> [ | Temp ]
+[ Temp Wall ] -> [ WallBottom ]
+[ Temp ] -> [ ]
+
+[ >  Player | Crate ] -> [  >  Player | > Crate  ]
+
+==============
+WINCONDITIONS
+==============
+
+All Target on Crate
+
+=======
+LEVELS
+=======
+
+
+######
+#.O###
+#..###
+#@P..#
+#..*.#
+#..###
+######
+
+
+######
+#....#
+#.#P.#
+#.*@.#
+#.O@.#
+#....#
+######
