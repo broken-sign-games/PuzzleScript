@@ -8,416 +8,684 @@ var rightdragging=false;
 var columnAdded=false;
 
 function selectText(containerid,e) {
-	e = e || window.event;
-	var myspan = document.getElementById(containerid);
-	if (e&&(e.ctrlKey || e.metaKey)) {
-		var levelarr = ["console"].concat(myspan.innerHTML.split("<br>"));
-		var leveldat = levelFromString(state,levelarr);
-		loadLevelFromLevelDat(state,leveldat,null);
-		canvasResize();
-	} else {
-	    if (document.selection) {
-	        var range = document.body.createTextRange();
-	        range.moveToElementText(myspan);
-	        range.select();
-	    } else if (window.getSelection) {
-	        var range = document.createRange();
-	        range.selectNode(myspan);
-	        window.getSelection().addRange(range);
-	    }
-	}
+    e = e || window.event;
+    var myspan = document.getElementById(containerid);
+    if (e&&(e.ctrlKey || e.metaKey)) {
+        var levelarr = ["console"].concat(myspan.innerHTML.split("<br>"));
+        var leveldat = levelFromString(state,levelarr);
+        loadLevelFromLevelDat(state,leveldat,null);
+        canvasResize();
+    } else {
+        if (document.selection) {
+            var range = document.body.createTextRange();
+            range.moveToElementText(myspan);
+            range.select();
+        } else if (window.getSelection) {
+            var range = document.createRange();
+            range.selectNode(myspan);
+            window.getSelection().addRange(range);
+        }
+    }
 }
 
 function recalcLevelBounds(){
 }
 
 function arrCopy(from, fromoffset, to, tooffset, len) {
-	while (len--)
-		to[tooffset++] = from[fromoffset]++;
+    while (len--)
+        to[tooffset++] = from[fromoffset]++;
 }
 
 function adjustLevel(level, widthdelta, heightdelta) {
-	backups.push(backupLevel());
-	var oldlevel = level.clone();
-	level.width += widthdelta;
-	level.height += heightdelta;
-	level.n_tiles = level.width * level.height;
-	level.objects = new Int32Array(level.n_tiles * STRIDE_OBJ);
-	var bgMask = new BitVec(STRIDE_OBJ);
-	bgMask.ibitset(state.backgroundid);
-	for (var i=0; i<level.n_tiles; ++i) 
-		level.setCell(i, bgMask);
-	level.movements = new Int32Array(level.objects.length);
-	columnAdded=true;
-	RebuildLevelArrays();
-	return oldlevel;
+    backups.push(backupLevel());
+    var oldlevel = level.clone();
+    level.width += widthdelta;
+    level.height += heightdelta;
+    level.n_tiles = level.width * level.height;
+    level.objects = new Int32Array(level.n_tiles * STRIDE_OBJ);
+    var bgMask = new BitVec(STRIDE_OBJ);
+    bgMask.ibitset(state.backgroundid);
+    for (var i=0; i<level.n_tiles; ++i) 
+        level.setCell(i, bgMask);
+    level.movements = new Int32Array(level.objects.length);
+    columnAdded=true;
+    RebuildLevelArrays();
+    return oldlevel;
 }
 
 function addLeftColumn() {
-	var oldlevel = adjustLevel(level, 1, 0);
-	for (var x=1; x<level.width; ++x) {
-		for (var y=0; y<level.height; ++y) {
-			var index = x*level.height + y;
-			level.setCell(index, oldlevel.getCell(index - level.height))
-		}
-	}
+    var oldlevel = adjustLevel(level, 1, 0);
+    for (var x=1; x<level.width; ++x) {
+        for (var y=0; y<level.height; ++y) {
+            var index = x*level.height + y;
+            level.setCell(index, oldlevel.getCell(index - level.height))
+        }
+    }
 }
 
 function addRightColumn() {
-	var oldlevel = adjustLevel(level, 1, 0);
-	for (var x=0; x<level.width-1; ++x) {
-		for (var y=0; y<level.height; ++y) {
-			var index = x*level.height + y;
-			level.setCell(index, oldlevel.getCell(index))
-		}
-	}
+    var oldlevel = adjustLevel(level, 1, 0);
+    for (var x=0; x<level.width-1; ++x) {
+        for (var y=0; y<level.height; ++y) {
+            var index = x*level.height + y;
+            level.setCell(index, oldlevel.getCell(index))
+        }
+    }
 }
 
 function addTopRow() {
-	var oldlevel = adjustLevel(level, 0, 1);
-	for (var x=0; x<level.width; ++x) {
-		for (var y=1; y<level.height; ++y) {
-			var index = x*level.height + y;
-			level.setCell(index, oldlevel.getCell(index - x - 1))
-		}
-	}
+    var oldlevel = adjustLevel(level, 0, 1);
+    for (var x=0; x<level.width; ++x) {
+        for (var y=1; y<level.height; ++y) {
+            var index = x*level.height + y;
+            level.setCell(index, oldlevel.getCell(index - x - 1))
+        }
+    }
 }
 
 function addBottomRow() {
-	var oldlevel = adjustLevel(level, 0, 1);
-	for (var x=0; x<level.width; ++x) {
-		for (var y=0; y<level.height - 1; ++y) {
-			var index = x*level.height + y;
-			level.setCell(index, oldlevel.getCell(index - x));
-		}
-	}
+    var oldlevel = adjustLevel(level, 0, 1);
+    for (var x=0; x<level.width; ++x) {
+        for (var y=0; y<level.height - 1; ++y) {
+            var index = x*level.height + y;
+            level.setCell(index, oldlevel.getCell(index - x));
+        }
+    }
 }
 
 function removeLeftColumn() {
-	if (level.width<=1) {
-		return;
-	}
-	var oldlevel = adjustLevel(level, -1, 0);
-	for (var x=0; x<level.width; ++x) {
-		for (var y=0; y<level.height; ++y) {
-			var index = x*level.height + y;
-			level.setCell(index, oldlevel.getCell(index + level.height))
-		}
-	}
+    if (level.width<=1) {
+        return;
+    }
+    var oldlevel = adjustLevel(level, -1, 0);
+    for (var x=0; x<level.width; ++x) {
+        for (var y=0; y<level.height; ++y) {
+            var index = x*level.height + y;
+            level.setCell(index, oldlevel.getCell(index + level.height))
+        }
+    }
 }
 
 function removeRightColumn(){
-	if (level.width<=1) {
-		return;
-	}
-	var oldlevel = adjustLevel(level, -1, 0);
-	for (var x=0; x<level.width; ++x) {
-		for (var y=0; y<level.height; ++y) {
-			var index = x*level.height + y;
-			level.setCell(index, oldlevel.getCell(index))
-		}
-	}
+    if (level.width<=1) {
+        return;
+    }
+    var oldlevel = adjustLevel(level, -1, 0);
+    for (var x=0; x<level.width; ++x) {
+        for (var y=0; y<level.height; ++y) {
+            var index = x*level.height + y;
+            level.setCell(index, oldlevel.getCell(index))
+        }
+    }
 }
 
 function removeTopRow(){
-	if (level.height<=1) {
-		return;
-	}
-	var oldlevel = adjustLevel(level, 0, -1);
-	for (var x=0; x<level.width; ++x) {
-		for (var y=0; y<level.height; ++y) {
-			var index = x*level.height + y;
-			level.setCell(index, oldlevel.getCell(index + x + 1))
-		}
-	}
+    if (level.height<=1) {
+        return;
+    }
+    var oldlevel = adjustLevel(level, 0, -1);
+    for (var x=0; x<level.width; ++x) {
+        for (var y=0; y<level.height; ++y) {
+            var index = x*level.height + y;
+            level.setCell(index, oldlevel.getCell(index + x + 1))
+        }
+    }
 }
 function removeBottomRow(){
-	if (level.height<=1) {
-		return;
-	}
-	var oldlevel = adjustLevel(level, 0, -1);
-	for (var x=0; x<level.width; ++x) {
-		for (var y=0; y<level.height; ++y) {
-			var index = x*level.height + y;
-			level.setCell(index, oldlevel.getCell(index + x))
-		}
-	}
+    if (level.height<=1) {
+        return;
+    }
+    var oldlevel = adjustLevel(level, 0, -1);
+    for (var x=0; x<level.width; ++x) {
+        for (var y=0; y<level.height; ++y) {
+            var index = x*level.height + y;
+            level.setCell(index, oldlevel.getCell(index + x))
+        }
+    }
 }
 
 function matchGlyph(inputmask,glyphAndMask) {
-	// find mask with closest match
-	var highestbitcount=-1;
-	var highestmask;
-	for (var i=0; i<glyphAndMask.length; ++i) {
-		var glyphname = glyphAndMask[i][0];
-		var glyphmask = glyphAndMask[i][1];
- 		var glyphbits = glyphAndMask[i][2];
-		//require all bits of glyph to be in input
-		if (glyphmask.bitsSetInArray(inputmask.data)) {
-			var bitcount = 0;
-			for (var bit=0;bit<32*STRIDE_OBJ;++bit) {
-				if (glyphbits.get(bit) && inputmask.get(bit))
- 					bitcount++;
-				if (glyphmask.get(bit) && inputmask.get(bit))
-					bitcount++;
-			}
-			if (bitcount>highestbitcount) {
-				highestbitcount=bitcount;
-				highestmask=glyphname;
-			}
-		}
-	}
-	if (highestbitcount>0) {
-		return highestmask;
-	}
-	
-	logErrorNoLine("Wasn't able to approximate a glyph value for some tiles, using '.' as a placeholder.",true);
-	return '.';
+    // find mask with closest match
+    var highestbitcount=-1;
+    var highestmask;
+    for (var i=0; i<glyphAndMask.length; ++i) {
+        var glyphname = glyphAndMask[i][0];
+        var glyphmask = glyphAndMask[i][1];
+         var glyphbits = glyphAndMask[i][2];
+        //require all bits of glyph to be in input
+        if (glyphmask.bitsSetInArray(inputmask.data)) {
+            var bitcount = 0;
+            for (var bit=0;bit<32*STRIDE_OBJ;++bit) {
+                if (glyphbits.get(bit) && inputmask.get(bit))
+                     bitcount++;
+                if (glyphmask.get(bit) && inputmask.get(bit))
+                    bitcount++;
+            }
+            if (bitcount>highestbitcount) {
+                highestbitcount=bitcount;
+                highestmask=glyphname;
+            }
+        }
+    }
+    if (highestbitcount>0) {
+        return highestmask;
+    }
+    
+    logErrorNoLine("Wasn't able to approximate a glyph value for some tiles, using '.' as a placeholder.",true);
+    return '.';
 }
 
 var htmlEntityMap = {
-	"&": "&amp;",
-	"<": "&lt;",
-	">": "&gt;",
-	'"': '&quot;',
-	"'": '&#39;',
-	"/": '&#x2F;'
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': '&quot;',
+    "'": '&#39;',
+    "/": '&#x2F;'
 };
 
 var selectableint  = 0;
 
 function printLevel() {
-	var glyphMasks = [];
-	for (var glyphName in state.glyphDict) {
-		if (state.glyphDict.hasOwnProperty(glyphName)&&glyphName.length===1) {
-			var glyph = state.glyphDict[glyphName];
-			var glyphmask=new BitVec(STRIDE_OBJ);
-			for (var i=0;i<glyph.length;i++)
-			{
-				var id = glyph[i];
-				if (id>=0) {
-					glyphmask.ibitset(id);
-				}
-			}
-			var glyphbits = glyphmask.clone();
-			//register the same - backgroundmask with the same name
-			var bgMask = state.layerMasks[state.backgroundlayer];
-			glyphmask.iclear(bgMask);
-			glyphMasks.push([glyphName, glyphmask, glyphbits]);
-		}
-	}
-	selectableint++;
-	var tag = 'selectable'+selectableint;
-	var output="Printing level contents:<br><br><span id=\""+tag+"\" onclick=\"selectText('"+tag+"',event)\">";
-	for (var j=0;j<level.height;j++) {
-		for (var i=0;i<level.width;i++) {
-			var cellIndex = j+i*level.height;
-			var cellMask = level.getCell(cellIndex);
-			var glyph = matchGlyph(cellMask,glyphMasks);
-			if (glyph in htmlEntityMap) {
-				glyph = htmlEntityMap[glyph]; 
-			}
-			output = output+glyph;
-		}
-		if (j<level.height-1){
-			output=output+"<br>";
-		}
-	}
-	output+="</span><br><br>"
-	consolePrint(output,true);
+    var glyphMasks = [];
+    for (var glyphName in state.glyphDict) {
+        if (state.glyphDict.hasOwnProperty(glyphName)&&glyphName.length===1) {
+            var glyph = state.glyphDict[glyphName];
+            var glyphmask=new BitVec(STRIDE_OBJ);
+            for (var i=0;i<glyph.length;i++)
+            {
+                var id = glyph[i];
+                if (id>=0) {
+                    glyphmask.ibitset(id);
+                }
+            }
+            var glyphbits = glyphmask.clone();
+            //register the same - backgroundmask with the same name
+            var bgMask = state.layerMasks[state.backgroundlayer];
+            glyphmask.iclear(bgMask);
+            glyphMasks.push([glyphName, glyphmask, glyphbits]);
+        }
+    }
+    selectableint++;
+    var tag = 'selectable'+selectableint;
+    var output="Printing level contents:<br><br><span id=\""+tag+"\" onclick=\"selectText('"+tag+"',event)\">";
+    for (var j=0;j<level.height;j++) {
+        for (var i=0;i<level.width;i++) {
+            var cellIndex = j+i*level.height;
+            var cellMask = level.getCell(cellIndex);
+            var glyph = matchGlyph(cellMask,glyphMasks);
+            if (glyph in htmlEntityMap) {
+                glyph = htmlEntityMap[glyph]; 
+            }
+            output = output+glyph;
+        }
+        if (j<level.height-1){
+            output=output+"<br>";
+        }
+    }
+    output+="</span><br><br>"
+    consolePrint(output,true);
 }
 
 function levelEditorClick(event,click) {
-	if (mouseCoordY<=-2) {
-		var ypos = editorRowCount-(-mouseCoordY-2)-1;
-		var newindex=mouseCoordX+(screenwidth-1)*ypos;
-		if (mouseCoordX===-1) {
-			printLevel();
-		} else if (mouseCoordX>=0&&newindex<glyphImages.length) {
-			glyphSelectedIndex=newindex;
-			redraw();
-		}
+    if (mouseCoordY<=-2) {
+        var ypos = editorRowCount-(-mouseCoordY-2)-1;
+        var newindex=mouseCoordX+(screenwidth-1)*ypos;
+        if (mouseCoordX===-1) {
+            printLevel();
+        } else if (mouseCoordX>=0&&newindex<glyphImages.length) {
+            glyphSelectedIndex=newindex;
+            redraw();
+        }
 
-	} else if (mouseCoordX>-1&&mouseCoordY>-1&&mouseCoordX<screenwidth-2&&mouseCoordY<screenheight-2-editorRowCount	) {
-		var glyphname = glyphImagesCorrespondance[glyphSelectedIndex];
-		var glyph = state.glyphDict[glyphname];
-		var glyphmask = new BitVec(STRIDE_OBJ);
-		for (var i=0;i<glyph.length;i++)
-		{
-			var id = glyph[i];
-			if (id>=0) {
-				glyphmask.ibitset(id);
-			}			
-		}
+    } else if (mouseCoordX>-1&&mouseCoordY>-1&&mouseCoordX<screenwidth-2&&mouseCoordY<screenheight-2-editorRowCount	) {
+        var glyphname = glyphImagesCorrespondance[glyphSelectedIndex];
+        var glyph = state.glyphDict[glyphname];
+        var glyphmask = new BitVec(STRIDE_OBJ);
+        for (var i=0;i<glyph.length;i++)
+        {
+            var id = glyph[i];
+            if (id>=0) {
+                glyphmask.ibitset(id);
+            }			
+        }
 
-		var backgroundMask = state.layerMasks[state.backgroundlayer];
-		if (glyphmask.bitsClearInArray(backgroundMask.data)) {
-			// If we don't already have a background layer, mix in
-			// the default one.
-			glyphmask.ibitset(state.backgroundid);
-		}
+        var backgroundMask = state.layerMasks[state.backgroundlayer];
+        if (glyphmask.bitsClearInArray(backgroundMask.data)) {
+            // If we don't already have a background layer, mix in
+            // the default one.
+            glyphmask.ibitset(state.backgroundid);
+        }
 
-		var coordIndex = mouseCoordY + mouseCoordX*level.height;
-		var getcell = level.getCell(coordIndex);
-		if (getcell.equals(glyphmask)) {
-			return;
-		} else {
-			if (anyEditsSinceMouseDown===false) {
-				anyEditsSinceMouseDown=true;				
-        		backups.push(backupLevel());
-			}
-			level.setCell(coordIndex, glyphmask);
-			redraw();
-		}
-	}
-	else if (click) {
-		if (mouseCoordX===-1) {
-			//add a left row to the map
-			addLeftColumn();			
-			canvasResize();
-		} else if (mouseCoordX===screenwidth-2) {
-			addRightColumn();
-			canvasResize();
-		} 
-		if (mouseCoordY===-1) {
-			addTopRow();
-			canvasResize();
-		} else if (mouseCoordY===screenheight-2-editorRowCount) {
-			addBottomRow();
-			canvasResize();
-		}
-	}
+        var coordIndex = mouseCoordY + mouseCoordX*level.height;
+        var getcell = level.getCell(coordIndex);
+        if (getcell.equals(glyphmask)) {
+            return;
+        } else {
+            if (anyEditsSinceMouseDown===false) {
+                anyEditsSinceMouseDown=true;				
+                backups.push(backupLevel());
+            }
+            level.setCell(coordIndex, glyphmask);
+            redraw();
+        }
+    }
+    else if (click) {
+        if (mouseCoordX===-1) {
+            //add a left row to the map
+            addLeftColumn();			
+            canvasResize();
+        } else if (mouseCoordX===screenwidth-2) {
+            addRightColumn();
+            canvasResize();
+        } 
+        if (mouseCoordY===-1) {
+            addTopRow();
+            canvasResize();
+        } else if (mouseCoordY===screenheight-2-editorRowCount) {
+            addBottomRow();
+            canvasResize();
+        }
+    }
 }
 
 function levelEditorRightClick(event,click) {
-	if (mouseCoordY===-2) {
-		if (mouseCoordX<=glyphImages.length) {
-			glyphSelectedIndex=mouseCoordX;
-			redraw();
-		}
-	} else if (mouseCoordX>-1&&mouseCoordY>-1&&mouseCoordX<screenwidth-2&&mouseCoordY<screenheight-2-editorRowCount	) {
-		var coordIndex = mouseCoordY + mouseCoordX*level.height;
-		var glyphmask = new BitVec(STRIDE_OBJ);
-		glyphmask.ibitset(state.backgroundid);
-		level.setCell(coordIndex, glyphmask);
-		redraw();
-	}
-	else if (click) {
-		if (mouseCoordX===-1) {
-			//add a left row to the map
-			removeLeftColumn();			
-			canvasResize();
-		} else if (mouseCoordX===screenwidth-2) {
-			removeRightColumn();
-			canvasResize();
-		} 
-		if (mouseCoordY===-1) {
-			removeTopRow();
-			canvasResize();
-		} else if (mouseCoordY===screenheight-2-editorRowCount) {
-			removeBottomRow();
-			canvasResize();
-		}
-	}
+    if (mouseCoordY===-2) {
+        if (mouseCoordX<=glyphImages.length) {
+            glyphSelectedIndex=mouseCoordX;
+            redraw();
+        }
+    } else if (mouseCoordX>-1&&mouseCoordY>-1&&mouseCoordX<screenwidth-2&&mouseCoordY<screenheight-2-editorRowCount	) {
+        var coordIndex = mouseCoordY + mouseCoordX*level.height;
+        var glyphmask = new BitVec(STRIDE_OBJ);
+        glyphmask.ibitset(state.backgroundid);
+        level.setCell(coordIndex, glyphmask);
+        redraw();
+    }
+    else if (click) {
+        if (mouseCoordX===-1) {
+            //add a left row to the map
+            removeLeftColumn();			
+            canvasResize();
+        } else if (mouseCoordX===screenwidth-2) {
+            removeRightColumn();
+            canvasResize();
+        } 
+        if (mouseCoordY===-1) {
+            removeTopRow();
+            canvasResize();
+        } else if (mouseCoordY===screenheight-2-editorRowCount) {
+            removeBottomRow();
+            canvasResize();
+        }
+    }
+}
+
+var lastCoord;
+
+var x1 = 5;  //  leftPixelX
+var y1 = 5;  //  leftPixelY
+var x2 = 5;  // rightPixelX
+var y2 = 5;  // rightPixelY
+
+function mouseAction(event,click,id) {
+
+    if (textMode) {
+        if (!click)
+            return;
+        if (titleScreen) {
+            if (titleMode===0) {
+                if (mouseCoordY===6) {
+                    titleButtonSelected();
+                }
+            } else {
+                if (mouseCoordY===5) {
+                    if (titleSelection!==0) {
+                        titleSelection=0;
+                        generateTitleScreen();
+                        redraw();
+                    } else {
+                        titleButtonSelected();
+                    }
+                } else if (mouseCoordY===7) {
+                    titleSelection=1;
+                    titleButtonSelected();
+                }
+            }
+        } else if (messageselected===false) {
+            messageselected=true;
+            timer=0;
+            quittingMessageScreen=true;
+            tryPlayCloseMessageSound();
+            titleScreen=false;
+            drawMessageScreen();
+        }
+    } else if (mouseCoordX<0 || mouseCoordY < 0 || mouseCoordX>=screenwidth || mouseCoordY>=screenheight) {
+        x1 = Math.max(0, Math.min(cellwidth*screenwidth, mousePixelX));
+        y1 = Math.max(0, Math.min(cellheight*screenheight, mousePixelY));
+    } else {
+
+        if (!click) {
+
+            x2 = mousePixelX;
+            y2 = mousePixelY;
+
+
+            if (cellwidth !== cellheight) {
+                throw "Error: Cell is not square.";
+            }
+
+            var dirX = x2-x1;
+            var dirY = y2-y1;
+            //var rootedX = (y1*dirX)/dirY;					non-integer
+            var scaledRootedX = (y1*dirX);						// == rootedX *dirY
+            var rootedY = y1;
+
+            // (x1/dirX)*dirY - y1 = c
+            //	x*dirY = y*dirX
+
+            //var shiftMid = x1-rootedX;					non-integer
+            var scaledShiftMid = x1*dirY-scaledRootedX;			// == shiftMid*dirY
+
+            // dirY*x2 - dirX*y2 - dirY*shiftMid	==	0
+            // dirY*x2 - dirX*y2	==	scaledShiftMid
+
+            //var horizontalDeviation = cellwidth*(1 + Math.abs(dirX/dirY))/2;		non-integer; formula provided by phenomist, checked by me (ThatScar)
+            var scaledAbsDeviationTimesTwo = cellwidth*(Math.abs(dirX) + Math.abs(dirY));	// == abs(horizontalDeviation*dirY*2)
+
+            //var scaledShiftMin = scaledShiftMid - horizontalDeviation*dirY;
+            //var scaledShiftMax = scaledShiftMid + horizontalDeviation*dirY;
+            var scaledShiftATimesTwo = 2*scaledShiftMid - scaledAbsDeviationTimesTwo;
+            var scaledShiftBTimesTwo = 2*scaledShiftMid + scaledAbsDeviationTimesTwo;
+
+            /// Important: shifts A and B must be used interchangeably
+
+            // Testing against various cellCenterX, cellCenterY;
+            // dirY*shiftMin		<	dirY*cellCenterX - dirX*cellCenterY	<=	dirY*shiftMax
+            // scaledShiftMin		<	dirY*cellCenterX - dirX*cellCenterY	<=	scaledShiftMax
+            // scaledShiftBTimesTwo	<2*(dirY*cellCenterX - dirX*cellCenterY)<=	scaledShiftBTimesTwo
+            // OR if both A and B fail, instead.
+
+
+            //fOfPoint = dirY*cellCenterX - dirX*cellCenterY;
+            //isInside = (scaledShiftMin < fOfPoint) == (fOfPoint <= scaledShiftMax);
+            function isInside(cellCenterXTimesTwo, cellCenterYTimesTwo) {
+                fOfPointTimesTwo = dirY*cellCenterXTimesTwo - dirX*cellCenterYTimesTwo;
+                return (scaledShiftATimesTwo < fOfPointTimesTwo) == (fOfPointTimesTwo <= scaledShiftBTimesTwo);
+                /// Important: shifts A and B must be used interchangeably
+            }
+
+            var cellX1=Math.floor(x1/cellwidth);
+            var cellY1=Math.floor(y1/cellheight);
+            var cellX2=Math.floor(x2/cellwidth);
+            var cellY2=Math.floor(y2/cellheight);
+            var offsetToCenterTimesTwo = cellwidth-1;
+
+            var xSign = (cellX2-cellX1)>=0 ? 1 : -1;
+            var ySign = (cellY2-cellY1)>=0 ? 1 : -1;
+
+            var yTrimmer = cellY1;
+
+            var tileListX = [];
+            var tileListY = [];
+
+
+            for (var i=cellX1; i != cellX2+xSign; i += xSign) {
+                var over = false;
+
+                for (var j=yTrimmer; j != cellY2+ySign; j += ySign) {
+                    if (j > level.height || j < 0 || i > level.width || i < 0) {
+                        console.log("Some darn loop failed again " + i + " " + j + " " + xSign + " " + ySign + " y1:" + cellY1 + " y2:" + cellY2);
+                        throw "Some darn loop failed again " + i + " " + j + " " + xSign + " " + ySign + " y1:" + cellY1 + " y2:" + cellY2; 
+                    }
+                    if (isInside(i*2*cellwidth+offsetToCenterTimesTwo, j*2*cellwidth+offsetToCenterTimesTwo)){
+
+                        tileListX.push(i);
+                        tileListY.push(j);
+
+                        over = true;
+                        yTrimmer = j;
+                    } else if (over) {
+                        break;
+                    }
+                }
+            }
+
+
+
+            var otherTileListX = [cellX1];
+            var otherTileListY = [cellY1];
+
+            while(cellX1 !== cellX2 || cellY1 !== cellY2) {
+                if (cellY1 > level.height || cellY1 < 0 || cellX1 > level.width || cellX1 < 0) {
+                    console.log("Some darn loop failed again " + cellX1 + " " + cellY1 + " " + xSign + " " + ySign + " x2:" + cellX2 + " y2:" + cellY2);
+                    throw "Some darn loop failed again " + cellX1 + " " + cellY1 + " " + xSign + " " + ySign + " x2:" + cellX2 + " y2:" + cellY2; 
+                }
+
+                cellCornerXTimesTwo = (cellX1*2)*cellwidth+offsetToCenterTimesTwo + xSign*cellwidth;
+                cellCornerYTimesTwo = (cellY1*2)*cellwidth+offsetToCenterTimesTwo + ySign*cellwidth;
+                fOfPointTimesTwo = dirY*cellCornerXTimesTwo - dirX*cellCornerYTimesTwo;
+                if ((fOfPointTimesTwo > scaledShiftMid*2 == ySign > 0) != (xSign > 0)) {
+                    cellX1 += xSign;
+                } else {
+                    cellY1 += ySign;
+                }
+
+                otherTileListX.push(cellX1);
+                otherTileListY.push(cellY1);
+            }
+
+            // reset
+            cellX1 = 5;
+            cellY1 = 5;
+
+
+
+            for (var i=0; i<tileListX.length; i++) {
+
+                if (tileListX[i] !== otherTileListX[i] || tileListY[i] !== otherTileListY[i]) {
+                    try {displayError("line tile placement algorithm discrepancies detected");} catch(e){}
+                    consolePrint("line tile placement algorithm discrepancies detected", true);
+                    throw "line tile placement algorithm discrepancies detected";
+                }
+
+                var coordIndex = screenOffsetY+tileListY[i] + (screenOffsetX+tileListX[i])*level.height;
+                if (lastCoord===coordIndex) {
+                    continue;
+                }
+                lastCoord = coordIndex;
+
+                if (againing) {
+                    //consolePrint("no mouse, againing",false);
+                } else {
+                    try {
+                        var bak = backupLevel();
+                        var cell = level.getCell(coordIndex);
+                        cell.ibitset(id);
+                        level.setCell(coordIndex, cell);
+                        var inputdir = 5;
+                        pushInput(inputdir);
+                        if (processInput(inputdir,false,false,bak)) {
+                            redraw();
+                        }
+                    } catch(e) {
+                        console.log(e);
+                        consolePrint(e,true);
+                    }
+                }
+            }
+
+            x1 = x2;
+            y1 = y2;
+
+
+        } else {
+            var coordIndex = screenOffsetY+mouseCoordY + (screenOffsetX+mouseCoordX)*level.height;
+
+            x1 = mousePixelX;
+            y1 = mousePixelY;
+
+            if (againing) {
+                //consolePrint("no mouse, againing",false);
+            } else {
+                try {
+                    var bak = backupLevel();
+                    var cell = level.getCell(coordIndex);
+                    cell.ibitset(id);
+                    level.setCell(coordIndex, cell);
+                    var inputdir = 5;
+                    pushInput(inputdir);
+                    if (processInput(inputdir,false,false,bak)) {
+                        redraw();
+                    }
+                } catch(e) {
+                    console.log(e);
+                    consolePrint(e,true);
+                }
+            }
+
+            lastCoord = coordIndex;
+        }
+    }
 }
 
 var anyEditsSinceMouseDown = false;
 
 function onMouseDown(event) {
 
-	if (event.handled){
-		return;
-	}
+    if (event.handled){
+        return;
+    }
 
-	ULBS();
-	
-	var lmb = event.button===0;
-	var rmb = event.button===2 ;
-	if (event.type=="touchstart"){
-		lmb=true;
-	}
-	if (lmb && (event.ctrlKey||event.metaKey)){
-		lmb=false;
-		rmb=true;
-	}
-	
-	if (lmb ) {
+    ULBS();
+    
+    var lmb = event.button===0;
+    var mmb = event.button===1;
+    var rmb = event.button===2;
+    if (event.type=="touchstart"){
+        lmb=true;
+    }
+    if (lmb && (event.ctrlKey||event.metaKey)){
+        lmb=false;
+        rmb=true;
+    }
+    
+    if (lmb ) {
         lastDownTarget = event.target;
         keybuffer=[];
         if (event.target===canvas || event.target.className==="tapFocusIndicator") {
-        	setMouseCoord(event);
-        	dragging=true;
-        	rightdragging=false;
-        	if (levelEditorOpened) {
-        		anyEditsSinceMouseDown=false;
-        		return levelEditorClick(event,true);
-        	}
+            setMouseCoord(event);
+            dragging=true;
+            rightdragging=false;
+            anyEditsSinceMouseDown=false;
+            if (levelEditorOpened) {
+                return levelEditorClick(event,true);
+            } else if ("mouse_left" in state.metadata) {
+                event.handled=true;
+				return mouseAction(event,true,state.lmbID); // must break to not execute dragging=false;
+			}
         }
         dragging=false;
         rightdragging=false; 
     } else if (rmb) {
-    	if (event.target===canvas || event.target.className==="tapFocusIndicator") {
-			setMouseCoord(event);
-		    dragging=false;
-		    rightdragging=true;
-        	if (levelEditorOpened) {
-        		return levelEditorRightClick(event,true);
-        	}
-        }
+        if (event.target===canvas || event.target.className==="tapFocusIndicator") {
+            setMouseCoord(event);
+            dragging=false;
+            rightdragging=true;
+            if (levelEditorOpened) {
+                return levelEditorRightClick(event,true);
+            } else if ("mouse_right" in state.metadata) {
+                event.handled=true;
+				return mouseAction(event,true,state.rmbID);
+			}
+        } else {
+			dragging=false;
+			rightdragging=false;
+		}
+    } else if (mmb) {
+		//undo
+		if (textMode===false) {
+			pushInput("undo");
+			DoUndo(false,true);
+			canvasResize(); // calls redraw
+		}
 	}
-	
-	event.handled=true;
+    
+    event.handled=true;
 
 }
 
 function rightClickCanvas(event) {
-    return prevent(event);
+    if ("mouse_right" in state.metadata) {
+        return prevent(event);
+    }
+    if (levelEditorOpened) {
+        return prevent(event);
+    }
 }
 
 function onMouseUp(event) {
-	if (event.handled){
-		return;
-	}
+    if (event.handled){
+        return;
+    }
 
-	dragging=false;
-	rightdragging=false;
-	
-	event.handled=true;
+    dragging=false;
+    rightdragging=false;
+
+	if (event.button===0) {
+        if (event.target===canvas) {
+        	setMouseCoord(event);
+        	if ("mouse_up" in state.metadata) {
+                event.handled=true;
+				return mouseAction(event,true,state.lmbupID);
+			}
+        }
+    } else if (event.button===2) {
+    	if (event.target.id==="gameCanvas") {
+        	setMouseCoord(event);
+        	if ("mouse_rup" in state.metadata) {
+                event.handled=true;
+				return mouseAction(event,true,state.rmbupID);
+			}
+        }
+    }
+
+    event.handled=true;
 }
 
 function onKeyDown(event) {
 
-	ULBS();
-	
+    ULBS();
+    
     event = event || window.event;
 
-	// Prevent arrows/space from scrolling page
-	if ((!IDE) && ([32, 37, 38, 39, 40].indexOf(event.keyCode) > -1)) {
-		if (event&&(event.ctrlKey || event.metaKey)){
-		} else {
-			prevent(event);
-		}
-	}
+    // Prevent arrows/space from scrolling page
+    if ((!IDE) && ([32, 37, 38, 39, 40].indexOf(event.keyCode) > -1)) {
+        if (event&&(event.ctrlKey || event.metaKey)){
+        } else {
+            prevent(event);
+        }
+    }
 
-	if ((!IDE) && event.keyCode===77){//m
-		toggleMute();		
-	}
+    if ((!IDE) && event.keyCode===77){//m
+        toggleMute();		
+    }
 
-	
+    
     if (keybuffer.indexOf(event.keyCode)>=0) {
-    	return;
+        return;
     }
 
     if(lastDownTarget === canvas || (window.Mobile && (lastDownTarget === window.Mobile.focusIndicator) ) ){
-    	if (keybuffer.indexOf(event.keyCode)===-1) {
-    		if (event&&(event.ctrlKey || event.metaKey)){
-		    } else {
-    		    keybuffer.splice(keyRepeatIndex,0,event.keyCode);
-	    	    keyRepeatTimer=0;
-	    	    checkKey(event,true);
-		    }
-		}
-	}
+        if (keybuffer.indexOf(event.keyCode)===-1) {
+            if (event&&(event.ctrlKey || event.metaKey)){
+            } else {
+                keybuffer.splice(keyRepeatIndex,0,event.keyCode);
+                keyRepeatTimer=0;
+                checkKey(event,true);
+            }
+        }
+    }
 
 
     if (canDump===true) {
@@ -431,12 +699,12 @@ function onKeyDown(event) {
             saveClick();
             prevent(event);
         } else if (event.keyCode===13 && (event.ctrlKey||event.metaKey)){//ctrl+enter
-			canvas.focus();
-			editor.display.input.blur();
+            canvas.focus();
+            editor.display.input.blur();
             rebuildClick();
             prevent(event);
-		}
-	}
+        }
+    }
 }
 
 function relMouseCoords(event){
@@ -452,70 +720,80 @@ function relMouseCoords(event){
     }
     while(currentElement = currentElement.offsetParent)
 
-	if (event.touches==null){
-    	canvasX = event.pageX - totalOffsetX;
-		canvasY = event.pageY - totalOffsetY;
-	} else {
-    	canvasX = event.touches[0].pageX - totalOffsetX;
-		canvasY = event.touches[0].pageY - totalOffsetY;
+    if (event.touches==null){
+        canvasX = event.pageX - totalOffsetX;
+        canvasY = event.pageY - totalOffsetY;
+    } else {
+        canvasX = event.touches[0].pageX - totalOffsetX;
+        canvasY = event.touches[0].pageY - totalOffsetY;
 
-	}
+    }
 
     return {x:canvasX, y:canvasY}
 }
 HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
 function onKeyUp(event) {
-	event = event || window.event;
-	var index=keybuffer.indexOf(event.keyCode);
-	if (index>=0){
-    	keybuffer.splice(index,1);
-    	if (keyRepeatIndex>=index){
-    		keyRepeatIndex--;
-    	}
+    event = event || window.event;
+    var index=keybuffer.indexOf(event.keyCode);
+    if (index>=0){
+        keybuffer.splice(index,1);
+        if (keyRepeatIndex>=index){
+            keyRepeatIndex--;
+        }
     }
 }
 
 function onMyFocus(event) {	
-	keybuffer=[];
-	keyRepeatIndex = 0;
-	keyRepeatTimer = 0;
+    keybuffer=[];
+    keyRepeatIndex = 0;
+    keyRepeatTimer = 0;
 }
 
 function onMyBlur(event) {
-	keybuffer=[];
-	keyRepeatIndex = 0;
-	keyRepeatTimer = 0;
+    keybuffer=[];
+    keyRepeatIndex = 0;
+    keyRepeatTimer = 0;
 }
 
 var mouseCoordX=0;
 var mouseCoordY=0;
+var mousePixelX=0;
+var mousePixelY=0;
 
 function setMouseCoord(e){
     var coords = canvas.relMouseCoords(e);
-    mouseCoordX=coords.x-xoffset;
-	mouseCoordY=coords.y-yoffset;
-	mouseCoordX=Math.floor(mouseCoordX/cellwidth);
-	mouseCoordY=Math.floor(mouseCoordY/cellheight);
+    mousePixelX=coords.x-xoffset;
+    mousePixelY=coords.y-yoffset;
+    mouseCoordX=Math.floor(mousePixelX/cellwidth);
+    mouseCoordY=Math.floor(mousePixelY/cellheight);
 }
 
-function mouseMove(event) {
-	
-	if (event.handled){
-		return;
-	}
-
-    if (levelEditorOpened) {
-    	setMouseCoord(event);  
-    	if (dragging) { 	
-    		levelEditorClick(event,false);
-    	} else if (rightdragging){
-    		levelEditorRightClick(event,false);    		
-    	}
-	    redraw();
+function onMouseMove(event) {
+    
+    if (event.handled){
+        return;
     }
 
-	event.handled=true;
+    if (levelEditorOpened) {
+        setMouseCoord(event);
+        if (dragging) {
+            levelEditorClick(event,false);
+        } else if (rightdragging){
+            levelEditorRightClick(event,false);
+        }
+        redraw();
+    } else if (dragging && "mouse_drag" in state.metadata) {
+    	setMouseCoord(event);
+    	mouseAction(event,false,state.dragID);
+	    redraw();
+	} else if (rightdragging && "mouse_rdrag" in state.metadata) {
+    	setMouseCoord(event);
+		mouseAction(event,false,state.rdragID);
+	    redraw();
+	}
+
+    event.handled=true;
     //window.console.log("showcoord ("+ canvas.width+","+canvas.height+") ("+x+","+y+")");
 }
 
@@ -524,11 +802,13 @@ function mouseOut() {
 }
 
 document.addEventListener('touchstart', onMouseDown, false);
-document.addEventListener('touchmove', mouseMove, false);
+document.addEventListener('touchmove', onMouseMove, false);
 document.addEventListener('touchend', onMouseUp, false);
 
 document.addEventListener('mousedown', onMouseDown, false);
 document.addEventListener('mouseup', onMouseUp, false);
+document.addEventListener('mousemove', onMouseMove, false);
+document.addEventListener('contextmenu', rightClickCanvas, false);
 
 document.addEventListener('keydown', onKeyDown, false);
 document.addEventListener('keyup', onKeyUp, false);
@@ -545,16 +825,28 @@ function prevent(e) {
     return false;
 }
 
+function titleButtonSelected() {
+	if (titleSelected===false) {
+		tryPlayStartGameSound();
+		titleSelected=true;
+		messageselected=false;
+		timer=0;
+		quittingTitleScreen=true;
+		generateTitleScreen();
+		canvasResize();
+	}
+}
+
 function checkKey(e,justPressed) {
-	ULBS();
-	
+    ULBS();
+    
     if (winning) {
-    	return;
-	}
-	if (e&&(e.ctrlKey || e.metaKey|| e.altKey)){
-		return;
-	}
-	
+        return;
+    }
+    if (e&&(e.ctrlKey || e.metaKey|| e.altKey)){
+        return;
+    }
+    
     var inputdir=-1;
     switch(e.keyCode) {
         case 65://a
@@ -587,8 +879,8 @@ function checkKey(e,justPressed) {
         }
         case 80://p
         {
-			printLevel();
-        	break;
+            printLevel();
+            break;
         }
         case 13://enter
         case 32://space
@@ -596,10 +888,10 @@ function checkKey(e,justPressed) {
         case 88://x
         {
 //            window.console.log("ACTION");
-			if (norepeat_action===false || justPressed) {
-            	inputdir=4;
+            if (norepeat_action===false || justPressed) {
+                inputdir=4;
             } else {
-            	return;
+                return;
             }
         break;
         }
@@ -611,167 +903,151 @@ function checkKey(e,justPressed) {
                 pushInput("undo");
                 DoUndo(false,true);
                 canvasResize(); // calls redraw
-            	return prevent(e);
+                return prevent(e);
             }
             break;
         }
         case 82://r
         {
-        	if (textMode===false) {
-        		if (justPressed) {
-	        		pushInput("restart");
-	        		DoRestart();
-	                canvasResize(); // calls redraw
-            		return prevent(e);
-            	}
+            if (textMode===false) {
+                if (justPressed) {
+                    pushInput("restart");
+                    DoRestart();
+                    canvasResize(); // calls redraw
+                    return prevent(e);
+                }
             }
             break;
         }
         case 27://escape
         {
-        	if (titleScreen===false) {
-				goToTitleScreen();	
-		    	tryPlayTitleSound();
-				canvasResize();			
-				return prevent(e)
-        	}
-        	break;
+            if (titleScreen===false) {
+                goToTitleScreen();	
+                tryPlayTitleSound();
+                canvasResize();			
+                return prevent(e)
+            }
+            break;
         }
         case 69: {//e
-        	if (canOpenEditor) {
-        		if (justPressed) {
-        			if (titleScreen){
-        				if (state.title==="EMPTY GAME"){
-        					compile(["loadFirstNonMessageLevel"]);
-        				} else {
-        					nextLevel();
-        				}
-        			}
-        			levelEditorOpened=!levelEditorOpened;
-        			if (levelEditorOpened===false){
-        				printLevel();
-        			}
-        			restartTarget=backupLevel();
-        			canvasResize();
-        		}
-        		return prevent(e);
-        	}
+            if (canOpenEditor) {
+                if (justPressed) {
+                    if (titleScreen){
+                        if (state.title==="EMPTY GAME"){
+                            compile(["loadFirstNonMessageLevel"]);
+                        } else {
+                            nextLevel();
+                        }
+                    }
+                    levelEditorOpened=!levelEditorOpened;
+                    if (levelEditorOpened===false){
+                        printLevel();
+                    }
+                    restartTarget=backupLevel();
+                    canvasResize();
+                }
+                return prevent(e);
+            }
             break;
-		}
-		case 48://0
-		case 49://1
-		case 50://2
-		case 51://3
-		case 52://4
-		case 53://5
-		case 54://6
-		case 55://7
-		case 56://8
-		case 57://9
-		{
-        	if (levelEditorOpened&&justPressed) {
-        		var num=9;
-        		if (e.keyCode>=49)  {
-        			num = e.keyCode-49;
-        		}
-
-				if (num<glyphImages.length) {
-					glyphSelectedIndex=num;
-				} else {
-					consolePrint("Trying to select tile outside of range in level editor.",true)
-				}
-
-        		canvasResize();
-        		return prevent(e);
-        	}	
-        	break;	
         }
-		case 189://-
-		{
-        	if (levelEditorOpened&&justPressed) {
-				if (glyphSelectedIndex>0) {
-					glyphSelectedIndex--;
-					canvasResize();
-					return prevent(e);
-				} 
-        	}	
-        	break;	
-		}
-		case 187://+
-		{
-        	if (levelEditorOpened&&justPressed) {
-				if (glyphSelectedIndex+1<glyphImages.length) {
-					glyphSelectedIndex++;
-					canvasResize();
-					return prevent(e);
-				} 
-        	}	
-        	break;	
-		}
+        case 48://0
+        case 49://1
+        case 50://2
+        case 51://3
+        case 52://4
+        case 53://5
+        case 54://6
+        case 55://7
+        case 56://8
+        case 57://9
+        {
+            if (levelEditorOpened&&justPressed) {
+                var num=9;
+                if (e.keyCode>=49)  {
+                    num = e.keyCode-49;
+                }
+
+                if (num<glyphImages.length) {
+                    glyphSelectedIndex=num;
+                } else {
+                    consolePrint("Trying to select tile outside of range in level editor.",true)
+                }
+
+                canvasResize();
+                return prevent(e);
+            }	
+            break;	
+        }
+        case 189://-
+        {
+            if (levelEditorOpened&&justPressed) {
+                if (glyphSelectedIndex>0) {
+                    glyphSelectedIndex--;
+                    canvasResize();
+                    return prevent(e);
+                } 
+            }	
+            break;	
+        }
+        case 187://+
+        {
+            if (levelEditorOpened&&justPressed) {
+                if (glyphSelectedIndex+1<glyphImages.length) {
+                    glyphSelectedIndex++;
+                    canvasResize();
+                    return prevent(e);
+                } 
+            }	
+            break;	
+        }
     }
     if (throttle_movement && inputdir>=0&&inputdir<=3) {
-    	if (lastinput==inputdir && input_throttle_timer<repeatinterval) {
-    		return;
-    	} else {
-    		lastinput=inputdir;
-    		input_throttle_timer=0;
-    	}
+        if (lastinput==inputdir && input_throttle_timer<repeatinterval) {
+            return;
+        } else {
+            lastinput=inputdir;
+            input_throttle_timer=0;
+        }
     }
     if (textMode) {
-    	if (state.levels.length===0) {
-    		//do nothing
-    	} else if (titleScreen) {
-    		if (titleMode===0) {
-    			if (inputdir===4&&justPressed) {
-    				if (titleSelected===false) {    				
-						tryPlayStartGameSound();
-	    				titleSelected=true;
-	    				messageselected=false;
-	    				timer=0;
-	    				quittingTitleScreen=true;
-	    				generateTitleScreen();
-	    				canvasResize();
-	    			}
-    			}
-    		} else {
-    			if (inputdir==4&&justPressed) {
-    				if (titleSelected===false) {    				
-						tryPlayStartGameSound();
-	    				titleSelected=true;
-	    				messageselected=false;
-	    				timer=0;
-	    				quittingTitleScreen=true;
-	    				generateTitleScreen();
-	    				redraw();
-	    			}
-    			}
-    			else if (inputdir===0||inputdir===2) {
-    				if (inputdir===0){
-    					titleSelection=0;    					
-    				} else {
-    					titleSelection=1;    					    					
-    				}
-    				generateTitleScreen();
-    				redraw();
-    			}
-    		}
-    	} else {
-    		if (inputdir==4&&justPressed) {    				
-				if (unitTesting) {
-					nextLevel();
-					return;
-				} else if (messageselected===false) {
-    				messageselected=true;
-    				timer=0;
-    				quittingMessageScreen=true;
-    				tryPlayCloseMessageSound();
-    				titleScreen=false;
-    				drawMessageScreen();
-    			}
-    		}
-    	}
+        if (state.levels.length===0) {
+            //do nothing
+        } else if (titleScreen) {
+            if (titleMode===0) {
+                if (inputdir===4&&justPressed) {
+                    titleButtonSelected();
+                }
+            } else {
+                if (inputdir==4&&justPressed) {
+                    titleButtonSelected();
+                }
+                else if (inputdir===0||inputdir===2) {
+                    if (inputdir===0){
+                        titleSelection=0;
+                    } else {
+                        titleSelection=1;
+                    }
+                    generateTitleScreen();
+                    redraw();
+                }
+            }
+        } else {
+            if (inputdir==4&&justPressed) {    				
+                if (unitTesting) {
+                    nextLevel();
+                    return;
+                } else if (messageselected===false) {
+                    messageselected=true;
+                    timer=0;
+                    quittingMessageScreen=true;
+                    tryPlayCloseMessageSound();
+                    titleScreen=false;
+                    drawMessageScreen();
+                }
+            }
+        }
     } else {
-	    if (!againing && inputdir>=0) {
+        if (!againing && inputdir>=0) {
             if (inputdir===4 && ('noaction' in state.metadata)) {
 
             } else {
@@ -779,9 +1055,9 @@ function checkKey(e,justPressed) {
                 if (processInput(inputdir)) {
                     redraw();
                 }
-	        }
-	       	return prevent(e);
-    	}
+            }
+               return prevent(e);
+        }
     }
 }
 
@@ -808,16 +1084,16 @@ function update() {
         if (timer/1000>0.15) {
             quittingMessageScreen=false;
             if (messagetext==="") {
-            	nextLevel();
+                nextLevel();
             } else {
-            	messagetext="";
-            	textMode=false;
-				titleScreen=false;
-				titleMode=(curlevel>0||curlevelTarget!==null)?1:0;
-				titleSelected=false;
-				titleSelection=0;
-    			canvasResize();  
-    			checkWin();          	
+                messagetext="";
+                textMode=false;
+                titleScreen=false;
+                titleMode=(curlevel>0||curlevelTarget!==null)?1:0;
+                titleSelected=false;
+                titleSelection=0;
+                canvasResize();  
+                checkWin();          	
             }
         }
     }
@@ -828,15 +1104,15 @@ function update() {
         }
     }
     if (keybuffer.length>0) {
-	    keyRepeatTimer+=deltatime;
-	    var ticklength = throttle_movement ? repeatinterval : repeatinterval/(Math.sqrt(keybuffer.length));
-	    if (keyRepeatTimer>ticklength) {
-	    	keyRepeatTimer=0;	
-	    	keyRepeatIndex = (keyRepeatIndex+1)%keybuffer.length;
-	    	var key = keybuffer[keyRepeatIndex];
-	        checkKey({keyCode:key},false);
-	    }
-	}
+        keyRepeatTimer+=deltatime;
+        var ticklength = throttle_movement ? repeatinterval : repeatinterval/(Math.sqrt(keybuffer.length));
+        if (keyRepeatTimer>ticklength) {
+            keyRepeatTimer=0;	
+            keyRepeatIndex = (keyRepeatIndex+1)%keybuffer.length;
+            var key = keybuffer[keyRepeatIndex];
+            checkKey({keyCode:key},false);
+        }
+    }
 
     if (autotickinterval>0&&!textMode&&!levelEditorOpened&&!againing&&!winning) {
         autotick+=deltatime;

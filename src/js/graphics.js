@@ -280,6 +280,9 @@ function redraw() {
             }         
         }
 	    
+        // TODO: Can we avoid this global?
+        screenOffsetX = mini;
+        screenOffsetY = minj;
 
         for (var i = mini; i < maxi; i++) {
             for (var j = minj; j < maxj; j++) {

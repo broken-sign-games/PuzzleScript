@@ -197,8 +197,8 @@ var codeMirrorFn = function() {
     var relativedirs = ['^', 'v', '<', '>', 'moving','stationary','parallel','perpendicular', 'no'];
     var logicWords = ['all', 'no', 'on', 'some'];
     var sectionNames = ['objects', 'legend', 'sounds', 'collisionlayers', 'rules', 'winconditions', 'levels'];
-	var commandwords = ["sfx0","sfx1","sfx2","sfx3","sfx4","sfx5","sfx6","sfx7","sfx8","sfx9","sfx10","cancel","checkpoint","restart","win","message","again"];
-    var reg_commands = /[\p{Z}\s]*(sfx0|sfx1|sfx2|sfx3|Sfx4|sfx5|sfx6|sfx7|sfx8|sfx9|sfx10|cancel|checkpoint|restart|win|message|again)[\p{Z}\s]*/u;
+	var commandwords = ["sfx0","sfx1","sfx2","sfx3","sfx4","sfx5","sfx6","sfx7","sfx8","sfx9","sfx10","cancel","checkpoint","restart","win","message","again","undo"];
+    var reg_commands = /[\p{Z}\s]*(sfx0|sfx1|sfx2|sfx3|Sfx4|sfx5|sfx6|sfx7|sfx8|sfx9|sfx10|cancel|checkpoint|restart|win|message|again|undo)[\p{Z}\s]*/u;
     var reg_name = /[\p{L}\p{N}_]+[\p{Z}\s]*/u;///\w*[a-uw-zA-UW-Z0-9_]/;
     var reg_number = /[\d]+/;
     var reg_soundseed = /\d+\b/;
@@ -1177,7 +1177,7 @@ var codeMirrorFn = function() {
 		                    if (match!==null) {
 		                    	var token = match[0].trim();
 		                    	if (sol) {
-		                    		if (['title','author','homepage','background_color','text_color','key_repeat_interval','realtime_interval','again_interval','flickscreen','zoomscreen','color_palette','youtube'].indexOf(token)>=0) {
+		                    		if (['title','author','homepage','background_color','text_color','key_repeat_interval','realtime_interval','again_interval','flickscreen','zoomscreen','color_palette','youtube','mouse_left','mouse_right','mouse_drag','mouse_rdrag','mouse_up','mouse_rup'].indexOf(token)>=0) {
 		                    			
                                         if (token==='youtube' || token==='author' || token==='homepage' || token==='title') {
                                             stream.string=mixedCase;
@@ -1188,12 +1188,15 @@ var codeMirrorFn = function() {
 		                    			if(m2!=null) {
                                             state.metadata.push(token);
 		                    				state.metadata.push(m2[0].trim());                                            
-		                    			} else {
+		                    			} else if (['mouse_left','mouse_right','mouse_drag','mouse_rdrag','mouse_up','mouse_rup'].indexOf(token)>=0) {
+											state.metadata.push(token);
+		                    				state.metadata.push(null);
+										} else {
 		                    				logError('MetaData "'+token+'" needs a value.',state.lineNumber);
 		                    			}
 		                    			state.tokenIndex=1;
 		                    			return 'METADATA';
-		                    		} else if ( ['run_rules_on_level_start','norepeat_action','require_player_movement','debug','verbose_logging','throttle_movement','noundo','noaction','norestart','scanline'].indexOf(token)>=0) {
+		                    		} else if ( ['run_rules_on_level_start','norepeat_action','require_player_movement','debug','verbose_logging','throttle_movement','noundo','noaction','norestart','scanline','mouse_left','mouse_drag','mouse_right','mouse_rdrag','mouse_up','mouse_rup','nokeyboard'].indexOf(token)>=0) {
 		                    			state.metadata.push(token);
 		                    			state.metadata.push("true");
 		                    			state.tokenIndex=-1;
