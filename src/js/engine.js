@@ -2291,6 +2291,13 @@ function calculateRowColMasks() {
 
 /* returns a bool indicating if anything changed */
 function processInput(dir,dontDoWin,dontModify,bak) {
+	var logTurnTime = false;
+	if (!dontModify && 'log_turn_time' in state.metadata)
+	{
+		logTurnTime = true;
+		var t0 = performance.now();
+	}
+
 	againing = false;
 
 	if (verbose_logging) { 
@@ -2557,7 +2564,13 @@ function processInput(dir,dontDoWin,dontModify,bak) {
 
     }
 
-	if (verbose_logging) {
+	if (logTurnTime)
+	{
+		var t1 = performance.now();
+		consolePrint('Turn took ' + (t1 - t0).toFixed(0) + ' milliseconds.');
+	}
+
+	if (verbose_logging || logTurnTime) {
 		consoleCacheDump();
 	}
 
