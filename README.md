@@ -6,6 +6,7 @@ with some useful additions:
 - Sprites are not restricted to a height of 5 pixels and will be aligned at the bottom edge of the cell. This allows you to create a simple pseudo-3D effect.
 - Optional mouse controls based on [ThatScar's PuzzleClick fork](https://github.com/ThatScar/PuzzleScript).
 - A new preamble option `log_turn_time` which prints the time it took to compute each turn to the console.
+- `nosave` command from [Dario Zubovic's fork](https://github.com/dario-zubovic/PuzzleScript), which prevents the current turn from getting added to the undo stack.
 
 You can [**access the editor here**](https://broken-sign-games.github.io/PuzzleScript/editor.html).
 
